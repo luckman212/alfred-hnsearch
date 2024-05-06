@@ -160,6 +160,7 @@ alfredSpinner() {
 	_spidAlive && sstat="🟢" || sstat="🔴"
 	if (( et > HNS_MAX_TIME )); then
 		echo 1>&2 "Timeout (${HNS_MAX_TIME}s) exceeded"
+		_spidAlive && kill "$spid"
 		no_results
 		exit
 	else
