@@ -691,32 +691,115 @@ https://www.alfredforum.com/topic/21807-script-filter-alfred-filters-results-any
 		</dict>
 	</array>
 	<key>readme</key>
-	<string># HN Search
+	<string>![](./icon_64.png)
 
-Search Hacker News/Y Combinator (https://news.ycombinator.com) and open articles or comment pages.
+# HN Search
 
-## Modifiers
+Search [Hacker News](https://news.ycombinator.com) (Y Combinator) and open articles or comment pages.
 
-- ctrl: copy item as Markdown link
-- opt: show/toggle opening alternate URL (comments/article)
-- cmd: show URL
-- shift: use QuickLook to preview page
+&gt; **N.B.** This is the first release! It may contain bugs or edge cases that I didn't plan for or encounter during my testing. Please [report any issues](https://github.com/luckman212/alfred-hnsearch/issues) you experience!
+
+## Installation / Dependencies
+
+Install the workflow as you typically would, by double-clicking the **HNSearch.alfredworkflow** file.
+
+Once installed, you can configure the settings using Alfred's standard Configure Workflow button. A few small dependencies will be automatically installed if they're not already loaded on your system. Currently, the dependencies are:
+
+- `jq` for parsing and handling JSON inside some of the scripts
+- `fzf` (for displaying nice menus in Terminal)
+- `sponge` (part of moreutils) for efficiently aggregating the paginated API results
+
+## Usage
+
+Activate the workflow using your preferred trigger or hotkey, and follow the prompts. Type a search query and choose the kind of search you want to execute (points, date or author):
+
+![](./img/screen1.png)
+
+You can temporarily override the **Minimum Points** setting by adding a suffix in the form of `|&lt;# of points&gt;`. For example, to search for stories about *Steve Jobs* that have at least **1500** points:
+
+![](./img/screen5.png)
+
+Once results are displayed, you can further filter the items by typing additional keywords in Alfred. The **Title**, **Author**, **URL**, and **Date** fields will be used for matching.
+
+![](./img/screen2.png)
+
+In the subtitle, you will see the number of points, the user who submitted the story, and the date of submission.
+
+## Modifier Keys
+
+You can use modifier keys while a story is selected to display more info or take additional actions:
+
+- &lt;kbd&gt;⌃CTRL&lt;/kbd&gt; copy item as Markdown link
+- &lt;kbd&gt;⌥OPT&lt;/kbd&gt; show/toggle opening alternate URL (comments/article)
+- &lt;kbd&gt;⌘CMD&lt;/kbd&gt; show URL
+- &lt;kbd&gt;⇧SHIFT&lt;/kbd&gt; use QuickLook to preview page (note: this can be slow)
 
 ## Cache and History
 
-## CLI
+Results that are fetched via the API are cached for a few minutes to speed up filtering and repeat searches.
 
-Also comes with a CLI tool for searching from Terminal. 
-Preferences (variables) are shared between the CLI and Alfred versions, so you can alternate between them.
-The symlink will be named the same as your keyword trigger. If you use multiple triggers (e.g. `hn||hns`) then the name is derived from the FIRST keyword.
+By default, searches that you execute will be saved in a small history file for convenience. The default is to retain the last `3` searches. You can increase or disable this if desired. Set **History Size** to `0` to disable.
 
-To install...
+When you activate the workflow, items from the history are shown, and can be re-executed by simply pressing &lt;kbd&gt;ENTER&lt;/kbd&gt;. Alternately, you can **edit** the search by holding the &lt;kbd&gt;⌥OPTION&lt;/kbd&gt; key while actioning the history item.
 
-## Additional Environment Variables (you probably don't need to change these...)
+![](img/screen3.png)
 
-- HNS_SPINNER_MSG
-- HNS_SPINNER_REFRESH: interval for the realtime results display to update)
-- HNS_CACHE_RESULTS (search results will be instantly recalled for this many seconds, set to 0 to disable)</string>
+## Commandline
+
+The workflow comes with a companion CLI tool for searching from Terminal.
+
+Most configuration variables/settings are shared between Alfred and the commandline version, so you can alternate between them.
+
+When you first run the workflow, if the CLI is not installed, an option to install it will be shown:
+
+![](./img/screen0.png)
+
+A symlink, named the same as your keyword trigger, will be created in `/usr/local/bin` by default. You can configure a different target directory in the Workflow configuration if needed. If you've defined multiple trigger keywords (e.g. `hn||hns`) then the symlink name is derived from the FIRST keyword.
+
+To see the full help/usage, run `hn --help`
+
+```text
+Query Hacker News — https://news.ycombinator.com
+  via Algolia API — https://hn.algolia.com/api
+
+usage: hn [opts] [title]
+    -p,--popularity    sort by points (if omitted, sort by date)
+    -t,--type &lt;type&gt;   type: story (default), comment, show_hn, ask_hn - see docs
+    -m,--min &lt;pts&gt;     minimum points (default: 10)
+    -u,--user &lt;user&gt;   search by username aka author
+    -x,--hits &lt;hits&gt;   max results (default: 400)
+    -n,--no-browse     don't open in browser
+    -y,--allow-typos   fuzzy matching on misspelled words
+    -r,--url           restrict matching to URL
+    --nohistory        do not save search to history
+    --lib [args]       perform action using hnlib Python library
+
+    selected items will be:
+      - output to the screen
+      - opened in browser (unless -n flag is passed)
+      - copied to the pasteboard in Markdown format
+
+    tip: perform multi-word searches by quoting, exclude words with `-` e.g.
+      hn 'Microsoft acquire -Blizzard'
+```
+
+## Configuration
+
+Below is a sample of the configuration options available. These are the defaults.
+
+![](img/screen4.png)
+
+## Additional Environment Variables
+
+You probably don't need to change these...
+
+- `HNS_SPINNER_MSG`
+- `HNS_SPINNER_REFRESH`: interval for the realtime results display to update)
+- `HNS_CACHE_RESULTS` (search results will be instantly recalled for this many seconds, set to `0` to disable)
+
+## Icon
+
+The main icons were adapted from https://www.pixelresort.com/project/hackernews. If there is any issue with this, please contact me.</string>
 	<key>uidata</key>
 	<dict>
 		<key>1A0793F1-B3D2-49A5-8717-61299CD8050F</key>
