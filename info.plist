@@ -1136,6 +1136,8 @@ The main icons were adapted from https://www.pixelresort.com/project/hackernews.
 		<key>HNS_SPINNER_REFRESH</key>
 		<string>0.25</string>
 	</dict>
+	<key>variablesdontexport</key>
+	<array/>
 	<key>version</key>
 	<string>1.0.0</string>
 	<key>webaddress</key>
