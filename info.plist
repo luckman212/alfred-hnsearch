@@ -776,6 +776,7 @@ usage: hn [opts] [title]
     -y,--allow-typos   fuzzy matching on misspelled words
     -r,--url           restrict matching to URL
     --nohistory        do not save search to history
+    --noignore         do not consider ignorelist
     --lib [args]       perform action using hnlib Python library
 
     selected items will be:
@@ -792,6 +793,10 @@ usage: hn [opts] [title]
 Below is a sample of the configuration options available. These are the defaults.
 
 ![](img/screen4.png)
+
+An Ignorelist (exclusion) feature is available to hide unwanted items from your search results. Separate the terms with either commas or newlines.
+
+![](img/screen6.png)
 
 ## Additional Environment Variables
 
