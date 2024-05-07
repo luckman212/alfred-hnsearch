@@ -154,7 +154,7 @@
 				<key>modifiersubtext</key>
 				<string></string>
 				<key>vitoclose</key>
-				<false/>
+				<true/>
 			</dict>
 		</array>
 		<key>BB63C971-D149-4E93-BD12-B0F28E6B1908</key>
@@ -167,7 +167,7 @@
 				<key>modifiersubtext</key>
 				<string></string>
 				<key>vitoclose</key>
-				<false/>
+				<true/>
 			</dict>
 		</array>
 		<key>EC97660E-6CA8-4528-8EA5-0E253123FFE7</key>
@@ -488,7 +488,11 @@
 				<key>runningsubtext</key>
 				<string>{var:HNS_SPINNER_MSG}</string>
 				<key>script</key>
-				<string>if [[ -e $SCRIPT_FILTER_JSON ]] ; then
+				<string># look into possibly using Alfred 5.5 native JSON caching feature
+# need to figure out a way to override it when desired
+# https://www.alfredapp.com/help/workflows/inputs/script-filter/json/#cache
+
+if [[ -e $SCRIPT_FILTER_JSON ]] ; then
   IFS=$'\t' read -r last_search_hash last_ts &lt; &lt;(
     jq -r '.variables | [ .search_hash, .completed ] | @tsv' "$SCRIPT_FILTER_JSON"
   )
@@ -1126,6 +1130,27 @@ The main icons were adapted from https://www.pixelresort.com/project/hackernews.
 			<key>variable</key>
 			<string>HNS_HIST_SIZE</string>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+				<key>verticalsize</key>
+				<integer>9</integer>
+			</dict>
+			<key>description</key>
+			<string>List of strings you want excluded from results. Based on case-insensitive match in Title or URL. Separate by commas or newlines.</string>
+			<key>label</key>
+			<string>Ignorelist</string>
+			<key>type</key>
+			<string>textarea</string>
+			<key>variable</key>
+			<string>HNS_IGNORELIST</string>
+		</dict>
 	</array>
 	<key>variables</key>
 	<dict>
@@ -1136,10 +1161,8 @@ The main icons were adapted from https://www.pixelresort.com/project/hackernews.
 		<key>HNS_SPINNER_REFRESH</key>
 		<string>0.25</string>
 	</dict>
-	<key>variablesdontexport</key>
-	<array/>
 	<key>version</key>
-	<string>1.0.1</string>
+	<string>1.0.3</string>
 	<key>webaddress</key>
 	<string>https://github.com/luckman212/alfred-hnsearch</string>
 </dict>

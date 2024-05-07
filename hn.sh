@@ -34,6 +34,17 @@ _usage() { cat <<-EOF
 	EOF
 }
 
+_hnspinner() {
+	[[ -n $1 ]] || return
+	local spaces dots c max=$1 v=${2:-1} str=$3
+	dc=$(( v % max ))
+	sc=$(( max - dc ))
+	printf -v dots '%-*s' $dc ' '
+	printf -v spaces '%-*s' $sc ' '
+	dots=${dots// /.}
+	printf "\r%s%s%s" "$str" "$dots" "$spaces"
+}
+
 #ensure brew exists
 if ! hash brew ; then
 	cat <<-EOJ
@@ -80,18 +91,21 @@ if ! _inAlfred ; then
 	declare -ga WF_VARS
 	while read -r VAR ; do
 		WF_VARS+=( "$VAR" )
-	done < <(jq -r '.[].variable' <<< "$DEFAULT_CONFIG")
+	done < <(jq -r '.[].variable' <<<"$DEFAULT_CONFIG")
 	for v in "${WF_VARS[@]}"; do
-		val=$(jq -r --arg v "$v" '.[$v] // empty' <<< "$USER_CONFIG") #check prefs first
+		val=$(jq -r --arg v "$v" '.[$v] // empty' <<<"$USER_CONFIG") #check prefs first
 		if [[ -z $val ]]; then #fall back to defaults
 			val=$(jq -r --arg v "$v" '
 				map(select(.variable==$v))[] | .config |
-				first(.default, .defaultvalue | select(. != null))' <<< "$DEFAULT_CONFIG")
+				first(.default, .defaultvalue | select(. != null))' <<<"$DEFAULT_CONFIG")
 		fi
 		declare -x "$v"="$val"
 		#echo "$v = ${!v}"
 	done
 fi
+
+#parse and populate ignorelist
+IFS=$'\n,' read -r -d '' -a HNS_IGNORE_ARR <<<"$HNS_IGNORELIST"
 
 API='https://hn.algolia.com/api/v1'
 DOCS='https://hn.algolia.com/api'
@@ -121,6 +135,7 @@ usage: ${0##*/} [opts] [title]
     -y,--allow-typos   fuzzy matching on misspelled words
     -r,--url           restrict matching to URL
     --nohistory        do not save search to history
+    --noignore         do not consider ignorelist
     --lib [args]       perform action using hnlib Python library
 
     selected items will be:
@@ -192,6 +207,10 @@ _doSearch() {
 	while true; do # [[ $hasNextPage != false ]]
 		res=$(_fetch)
 		[[ $DEBUG == true ]] && jq <<<"$res"
+		if [[ ${#HNS_IGNORE_ARR[@]} -gt 0 ]]; then
+			HNS_IGNORE_JSON=$(jq -n '$ARGS.positional' --args "${HNS_IGNORE_ARR[@]}")
+			res=$(jq --argjson bl "$HNS_IGNORE_JSON" '.hits |= map(select(any([.title, .url]|join(" "); test($bl[]; "i")) | not))' <<<"$res")
+		fi
 		HITS=$(jq -r <<<"$res" '.nbHits')
 		#echo "total hits: $HITS"
 		#echo "$(jq -r <<<"$res" '.nbPages') pages with $HNS_PAGESIZE items each"
@@ -205,7 +224,7 @@ _doSearch() {
 		NUM_PAGES=$(jq -r <<<"$res" '.nbPages')
 		RESULT_SIZE=$(jq 'length' "$RESULTS_JSON")
 		if ! _inAlfred; then
-			_spinner 3 "${PAGE:-0}" "${RESULT_SIZE:-0}"
+			_hnspinner 3 "${PAGE:-0}" "${RESULT_SIZE:-0}"
 		fi
 		#sleep 0.1
 		(( RESULT_SIZE >= HNS_MAX_HITS )) && break
@@ -225,6 +244,7 @@ searchAndGenerateAlfredResultsJson() {
 		--argjson x "$HNS_MAX_HITS" \
 		--arg hnu "${HN_URL}?id" \
 		--arg ua "$HNS_URL_ACTION" '
+		def trim: sub("^ +";"")|sub(" +$";"");
 		.[:$x] // empty |
 		if $v=="search" then sort_by(-.points) else . end |
 		map(
@@ -236,20 +256,21 @@ searchAndGenerateAlfredResultsJson() {
 				.urls = [ .url, .comments_url ]
 			end |
 			.first_url = (.urls[0] // .urls[1]) |
+			.second_url = (.urls[1] // "") |
 			{
-				title: .title,
+				title: (.title|trim),
 				arg: .first_url,
 				quicklookurl: .first_url,
 				match: ([ .title, .author, .date, (.url // "") ] | join(" ")),
 				subtitle: ("↑" + (.points|tostring) + "   " + .author + "   " + .date),
 				mods: {
 					ctrl: {
-						arg: ("[" + .title + "](" + .first_url + ")"),
+						arg: ("[" + (.title|trim) + "](" + .first_url + ")"),
 						variables: { "HNS_ACTION": "copy" },
 						subtitle: "↵ copy as Markdown"
 					},
-					cmd: { arg: .urls[0], subtitle: .urls[0] },
-					alt: { arg: .urls[1], subtitle: .urls[1] }
+					cmd: { arg: (.first_url // ""), subtitle: (.first_url // "") },
+					alt: { arg: (.second_url // ""), subtitle: (.second_url // "") }
 				}
 			}) as $items |
 			{
@@ -323,6 +344,7 @@ if ! _inAlfred ; then
 			-y|--allow-typos) TYPOS=true;;
 			-r|--url) RESTRICT='url';;
 			--nohistory) export HNS_HIST_SIZE=0;;
+			--noignore) unset HNS_IGNORE_ARR;;
 			--lib) shift; "$wf_dir/hnlib.py" "$@"; exit;;
 			--) shift;;
 			-*) echo 1>&2 "skipping invalid arg: $1";;
@@ -331,7 +353,11 @@ if ! _inAlfred ; then
 		(( $# )) && shift
 		(( $# == 0 )) && break
 	done
-	CLI_SEARCH_DESC=$LAST_ARG
+	if [[ -n $LAST_ARG ]]; then
+		CLI_SEARCH_DESC=$LAST_ARG
+	elif [[ -n $AUTHOR ]]; then
+		CLI_SEARCH_DESC="author: $AUTHOR"
+	fi
 	#[[ -z $LAST_ARG && -z $AUTHOR ]] && { echo "you must specify a query or an author"; exit 1; }
 fi
 
@@ -381,14 +407,14 @@ if _inAlfred ; then
 	alfredSpinner
 else
 	_doSearch
-	(( RESULT_SIZE > 0 )) || { echo "no results"; exit 1; }
 	printf '\r%*s\r' 10 ""
+	(( RESULT_SIZE > 0 )) || { echo "no results"; exit 1; }
 	if (( HNS_HIST_SIZE > 0 )); then #save to history
 		"$wf_dir/hnlib.py" \
 			--action add \
 			--search_desc "$CLI_SEARCH_DESC" \
 			--verb "$VERB" \
-			--search "$CLI_SEARCH_DESC" \
+			--search "$TITLE" \
 			--author "$AUTHOR" \
 			--points "$HNS_POINTS" \
 			--search_hash "$VERB|$CLI_SEARCH_DESC|$AUTHOR|$HNS_POINTS"
@@ -407,14 +433,15 @@ else
 		--arg v "$VERB" \
 		--arg t "$SECTION" \
 		--argjson w "$c3_width" \
-		--argjson x "$HNS_MAX_HITS" \
-		'def rpad($len): tostring | ($len - length) as $l | . + (" " * $l)[:$l];
+		--argjson x "$HNS_MAX_HITS" '
+		def rpad($len): tostring | ($len - length) as $l | . + (" " * $l)[:$l];
+		def trim: sub("^ +";"")|sub(" +$";"");
 		.[:$x] // empty |
 		if $v=="search" then sort_by(-.points) else . end | .[] |
 		if $t=="comment" then
 			[ (.objectID|rpad(8)), .created_at[:10], (.author[:$w]|rpad($w)), .story_title, .url ]
 		else
-			[ (.story_id|rpad(8)), .created_at[:10], (.points|tostring|rpad($w)), .title, .url ]
+			[ (.story_id|rpad(8)), .created_at[:10], (.points|tostring|rpad($w)), (.title|trim), .url ]
 		end | @tsv' \
 		"$RESULTS_JSON" |
 		fzf \
