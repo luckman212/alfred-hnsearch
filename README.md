@@ -107,8 +107,8 @@ An Ignorelist (exclusion) feature is available to hide unwanted items from your 
 You probably don't need to change these...
 
 - `HNS_SPINNER_MSG`
-- `HNS_SPINNER_REFRESH`: interval for the realtime results display to update)
-- `HNS_CACHE_RESULTS` (search results will be instantly recalled for this many seconds, set to `0` to disable)
+- `HNS_SPINNER_REFRESH`: interval for the realtime results display to update
+- `HNS_CACHE_RESULTS`: search results will be instantly recalled for this many seconds (set to `0` to disable)
 
 ## Icon
 
