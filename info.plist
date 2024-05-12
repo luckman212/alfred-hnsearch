@@ -1169,7 +1169,7 @@ The main icons were adapted from https://www.pixelresort.com/project/hackernews.
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.0.3</string>
+	<string>1.0.4</string>
 	<key>webaddress</key>
 	<string>https://github.com/luckman212/alfred-hnsearch</string>
 </dict>
