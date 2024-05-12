@@ -465,6 +465,7 @@ else
 		if [[ $BROWSE == true ]]; then
 			open "$URL"
 		fi
+		(( c++ ))
 	done
 	#copy markdown-formatted results to pasteboard
 	for item in "${IDS[@]}"; do
